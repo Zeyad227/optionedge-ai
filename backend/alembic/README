@@ -1,0 +1,10 @@
+# Alembic migrations
+
+```bash
+cd backend
+alembic upgrade head          # apply
+alembic revision -m "desc"   # autogenerate after model changes (review the diff)
+```
+
+For local SQLite, `init_db()` still calls `create_all` so the app boots without a migrate step.
+For Postgres (Docker), prefer `alembic upgrade head` before or on container start.
