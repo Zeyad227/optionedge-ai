@@ -1,0 +1,58 @@
+# Environment / secrets
+.env
+.env.local
+.env.*.local
+!.env.example
+
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+.venv/
+venv/
+env/
+*.egg-info/
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+.coverage
+.coverage.*
+htmlcov/
+dist/
+build/
+*.egg
+
+# Node / Next.js
+node_modules/
+frontend/.next/
+frontend/out/
+frontend/coverage/
+*.tsbuildinfo
+frontend/next-env.d.ts
+
+# Data / models / caches
+*.db
+*.sqlite
+*.sqlite3
+backend/data/
+backend/models/finbert/
+.huggingface/
+.cache/
+*.pkl
+
+# Docker
+docker-compose.override.yml
+
+# IDE / OS
+.idea/
+.vscode/
+*.swp
+.DS_Store
+Thumbs.db
+
+# Logs
+*.log
+logs/
+
