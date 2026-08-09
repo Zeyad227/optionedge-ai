@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import logging
 from datetime import UTC, datetime
 from email.utils import parsedate_to_datetime
 from time import mktime
@@ -11,6 +12,8 @@ import feedparser
 from app.providers.base import NewsProvider
 from app.schemas.models import NewsArticle
 from app.schemas.sourced import Sourced
+
+logger = logging.getLogger(__name__)
 
 FEEDS = [
     ("Reuters Business", "https://feeds.reuters.com/reuters/businessNews"),
@@ -37,7 +40,11 @@ class RssNewsProvider(NewsProvider):
         for source_name, url in FEEDS:
             try:
                 feed = await asyncio.to_thread(feedparser.parse, url)
-            except Exception:  # noqa: BLE001
+            except Exception as exc:  # noqa: BLE001
+                # A single dead feed is routine, so keep going without a
+                # traceback; the message is enough to spot a feed that has
+                # moved or is permanently failing.
+                logger.warning("RSS feed unavailable, skipping %s: %s", source_name, exc)
                 continue
             for entry in feed.entries[:10]:
                 published = _parse_date(entry)
