@@ -9,6 +9,7 @@ import pandas as pd
 
 from app.providers.base import MarketDataProvider
 from app.providers.http import http_get
+from app.providers.numeric import finite
 from app.schemas.models import Candle, Quote
 from app.schemas.sourced import Sourced
 
@@ -60,14 +61,20 @@ class StooqMarketProvider(MarketDataProvider):
         df = df.tail(keep)
         candles: list[Candle] = []
         for _, row in df.iterrows():
+            ohlc = [finite(row.get(field)) for field in ("Open", "High", "Low", "Close")]
+            if any(value is None for value in ohlc):
+                continue
+            open_, high, low, close = ohlc
             candles.append(
                 Candle(
                     timestamp=datetime.strptime(str(row["Date"]), "%Y-%m-%d").replace(tzinfo=UTC),
-                    open=float(row["Open"]),
-                    high=float(row["High"]),
-                    low=float(row["Low"]),
-                    close=float(row["Close"]),
-                    volume=float(row.get("Volume") or 0),
+                    open=open_,
+                    high=high,
+                    low=low,
+                    close=close,
+                    volume=finite(row.get("Volume")) or 0.0,
                 )
             )
+        if not candles:
+            return None
         return Sourced.of(candles, self.name, url=url)
