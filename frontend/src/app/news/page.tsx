@@ -3,6 +3,7 @@ import { ErrorBanner } from "@/components/ErrorBanner";
 import { ForecastFooter } from "@/components/ForecastFooter";
 import { SourceBadge } from "@/components/SourceBadge";
 import { api, getApiBaseUrl, safeGet } from "@/lib/api";
+import { safeExternalUrl } from "@/lib/utils";
 
 export const dynamic = "force-dynamic";
 
@@ -35,7 +36,7 @@ export default async function NewsPage() {
         {items.map((n, i) => (
           <li key={i} className="p-4">
             <a
-              href={String(n.url || "#")}
+              href={safeExternalUrl(n.url)}
               target="_blank"
               rel="noreferrer"
               className="text-zinc-100 hover:text-sky-400"

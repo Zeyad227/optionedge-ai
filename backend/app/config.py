@@ -25,7 +25,9 @@ class Settings(BaseSettings):
     tradier_sandbox_token: str = ""
     twelve_data_api_key: str = ""
     alpha_vantage_api_key: str = ""
-    sec_edgar_user_agent: str = "Zeyad Mostafa zeyad.mostafa86@outlook.com"
+    # EDGAR rejects requests without a contactable User-Agent; operators must supply
+    # their own via SEC_EDGAR_USER_AGENT rather than reuse this placeholder.
+    sec_edgar_user_agent: str = "OptionEdge AI (set SEC_EDGAR_USER_AGENT to your name and email)"
 
     # Infrastructure
     database_url: str = "sqlite+aiosqlite:///./data/optionedge.db"

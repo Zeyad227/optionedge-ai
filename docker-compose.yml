@@ -6,10 +6,12 @@ services:
     image: postgres:16-alpine
     environment:
       POSTGRES_USER: optionedge
-      POSTGRES_PASSWORD: optionedge
+      # Local-only default. Set POSTGRES_PASSWORD in .env before exposing this anywhere.
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-optionedge}
       POSTGRES_DB: optionedge
+    # Bound to loopback so the dev database is not reachable from the local network.
     ports:
-      - "5432:5432"
+      - "127.0.0.1:5432:5432"
     volumes:
       - postgres_data:/var/lib/postgresql/data
     healthcheck:
@@ -21,7 +23,7 @@ services:
   redis:
     image: redis:7-alpine
     ports:
-      - "6379:6379"
+      - "127.0.0.1:6379:6379"
     healthcheck:
       test: ["CMD", "redis-cli", "ping"]
       interval: 5s
@@ -34,7 +36,7 @@ services:
       dockerfile: Dockerfile
     env_file: .env
     environment:
-      DATABASE_URL: postgresql+asyncpg://optionedge:optionedge@postgres:5432/optionedge
+      DATABASE_URL: postgresql+asyncpg://optionedge:${POSTGRES_PASSWORD:-optionedge}@postgres:5432/optionedge
       REDIS_URL: redis://redis:6379/0
       CACHE_BACKEND: redis
     ports:

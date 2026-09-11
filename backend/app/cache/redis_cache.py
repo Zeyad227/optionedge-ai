@@ -30,6 +30,11 @@ class CacheBackend:
         return None
 
 
+# Redis expires keys on its own; the in-process fallback must do it explicitly or a
+# caller can grow the dict without bound by requesting many distinct symbols.
+MEMORY_CACHE_MAX_ENTRIES = 5_000
+
+
 class MemoryCache(CacheBackend):
     def __init__(self) -> None:
         self._store: dict[str, tuple[float, Any]] = {}
@@ -44,8 +49,21 @@ class MemoryCache(CacheBackend):
             return None
         return value
 
+    def _evict(self) -> None:
+        now = time.time()
+        for key in [k for k, (expires, _) in self._store.items() if expires < now]:
+            del self._store[key]
+        # Still oversized after dropping expired keys: shed the soonest to expire.
+        overflow = len(self._store) - MEMORY_CACHE_MAX_ENTRIES
+        if overflow > 0:
+            by_expiry = sorted(self._store, key=lambda k: self._store[k][0])
+            for key in by_expiry[:overflow]:
+                del self._store[key]
+
     async def set(self, key: str, value: Any, ttl: int) -> None:
         self._store[key] = (time.time() + ttl, value)
+        if len(self._store) > MEMORY_CACHE_MAX_ENTRIES:
+            self._evict()
 
     async def delete(self, key: str) -> None:
         self._store.pop(key, None)

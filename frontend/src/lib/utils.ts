@@ -4,6 +4,21 @@ export function cn(...inputs: ClassValue[]) {
   return clsx(inputs);
 }
 
+/**
+ * Article and filing links come from third-party RSS feeds and SEC EDGAR, so they
+ * are untrusted input. Rendering one straight into `href` would let a poisoned feed
+ * inject a `javascript:` or `data:` URL that runs on click.
+ */
+export function safeExternalUrl(url: unknown): string {
+  if (typeof url !== "string" || url.length === 0) return "#";
+  try {
+    const parsed = new URL(url);
+    return parsed.protocol === "https:" || parsed.protocol === "http:" ? parsed.href : "#";
+  } catch {
+    return "#";
+  }
+}
+
 export function fmtPct(n: number | null | undefined, digits = 1): string {
   if (n == null || Number.isNaN(n)) return "—";
   return `${n.toFixed(digits)}%`;

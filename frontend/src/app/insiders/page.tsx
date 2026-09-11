@@ -3,6 +3,7 @@ import { ErrorBanner } from "@/components/ErrorBanner";
 import { ForecastFooter } from "@/components/ForecastFooter";
 import { SourceBadge } from "@/components/SourceBadge";
 import { api, getApiBaseUrl, safeGet } from "@/lib/api";
+import { safeExternalUrl } from "@/lib/utils";
 
 export const dynamic = "force-dynamic";
 
@@ -91,7 +92,7 @@ export default async function InsidersPage() {
                 <td className="px-3 py-2">
                   {Boolean(t.form_url) ? (
                     <a
-                      href={String(t.form_url)}
+                      href={safeExternalUrl(t.form_url)}
                       target="_blank"
                       rel="noreferrer"
                       className="text-sky-400"
