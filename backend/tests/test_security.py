@@ -20,6 +20,54 @@ def test_invalid_symbol_rejected():
         assert "Invalid symbol" in resp.json()["detail"]
 
 
+def test_invalid_ohlcv_period_rejected():
+    app = create_app()
+    with TestClient(app) as client, patch(
+        "app.api.routes.health.check_provider_health",
+        new=AsyncMock(return_value={}),
+    ):
+        resp = client.get("/api/market/ohlcv/AAPL", params={"period": "../../etc/passwd"})
+        assert resp.status_code == 400
+        assert "Invalid period" in resp.json()["detail"]
+
+
+def test_invalid_news_symbol_rejected():
+    app = create_app()
+    with TestClient(app) as client, patch(
+        "app.api.routes.health.check_provider_health",
+        new=AsyncMock(return_value={}),
+    ):
+        resp = client.get("/api/news", params={"symbol": "A" * 64})
+        assert resp.status_code == 400
+        assert "Invalid symbol" in resp.json()["detail"]
+
+
+def test_backtest_rejects_malformed_and_oversized_date_range():
+    app = create_app()
+    with TestClient(app) as client, patch(
+        "app.api.routes.health.check_provider_health",
+        new=AsyncMock(return_value={}),
+    ):
+        malformed = client.post(
+            "/api/backtest/run",
+            json={"start": "not-a-date", "end": "2026-01-01", "symbols": ["AAPL"]},
+        )
+        assert malformed.status_code == 400
+
+        oversized = client.post(
+            "/api/backtest/run",
+            json={"start": "1990-01-01", "end": "2026-01-01", "symbols": ["AAPL"]},
+        )
+        assert oversized.status_code == 400
+        assert "maximum" in oversized.json()["detail"]
+
+        inverted = client.post(
+            "/api/backtest/run",
+            json={"start": "2026-01-01", "end": "2025-01-01", "symbols": ["AAPL"]},
+        )
+        assert inverted.status_code == 400
+
+
 def test_api_key_required_when_configured(monkeypatch):
     monkeypatch.setenv("API_KEY", "secret-test-key")
     from app.config import get_settings

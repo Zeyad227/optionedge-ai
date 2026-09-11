@@ -2,6 +2,8 @@
 
 from __future__ import annotations
 
+import hmac
+
 from starlette.middleware.base import BaseHTTPMiddleware
 from starlette.requests import Request
 from starlette.responses import JSONResponse, Response
@@ -24,7 +26,7 @@ class ApiKeyMiddleware(BaseHTTPMiddleware):
         auth_header = request.headers.get("Authorization", "")
         bearer = auth_header.removeprefix("Bearer ").strip() if auth_header else ""
         provided = request.headers.get("X-API-Key") or bearer
-        if provided != settings.api_key:
+        if not hmac.compare_digest(provided, settings.api_key):
             request_id = getattr(request.state, "request_id", None)
             return JSONResponse(
                 status_code=401,

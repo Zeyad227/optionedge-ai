@@ -1,8 +1,17 @@
 # Environment / secrets
 .env
-.env.local
-.env.*.local
+.env.*
 !.env.example
+
+# Keys / certificates
+*.pem
+*.key
+*.crt
+*.cer
+*.p12
+*.pfx
+credentials.json
+service-account*.json
 
 # Python
 __pycache__/
@@ -36,7 +45,9 @@ frontend/next-env.d.ts
 *.db
 *.sqlite
 *.sqlite3
+data/
 backend/data/
+*.leader.lock
 backend/models/finbert/
 .huggingface/
 .cache/
@@ -55,4 +66,10 @@ Thumbs.db
 # Logs
 *.log
 logs/
+
+# Temporary / backup artifacts
+*.bak
+*.tmp
+*.orig
+*.rej
 

@@ -4,6 +4,7 @@ import { ForecastFooter } from "@/components/ForecastFooter";
 import { SignalCard } from "@/components/SignalCard";
 import { SourceBadge } from "@/components/SourceBadge";
 import { api, getApiBaseUrl, safeGet, type Signal } from "@/lib/api";
+import { safeExternalUrl } from "@/lib/utils";
 
 export const dynamic = "force-dynamic";
 
@@ -128,7 +129,7 @@ export default async function DashboardPage() {
               {newsItems.map((n, i) => (
                 <li key={i} className="p-3">
                   <a
-                    href={String(n.url || "#")}
+                    href={safeExternalUrl(n.url)}
                     target="_blank"
                     rel="noreferrer"
                     className="text-sm text-zinc-200 hover:text-sky-400"
@@ -189,7 +190,7 @@ export default async function DashboardPage() {
                   </div>
                   {Boolean(t.form_url) && (
                     <a
-                      href={String(t.form_url)}
+                      href={safeExternalUrl(t.form_url)}
                       target="_blank"
                       rel="noreferrer"
                       className="text-[11px] text-sky-400"

@@ -6,6 +6,7 @@ from fastapi import APIRouter
 from pydantic import BaseModel, Field
 
 from app.api.forecast import with_forecast
+from app.api.validation import normalize_symbol, parse_date_range
 from app.backtest import HistoricalLabelGenerator, compute_metrics
 from app.stubs import BacktestConfig
 
@@ -39,11 +40,12 @@ class BacktestRunResponse(BaseModel):
 
 @router.post("/run")
 async def run_backtest(body: BacktestRequest):
+    start_date, end_date = parse_date_range(body.start, body.end)
     config = BacktestConfig(
         strategy=body.strategy,
-        start=body.start,
-        end=body.end,
-        symbols=[s.upper() for s in body.symbols],
+        start=start_date.isoformat(),
+        end=end_date.isoformat(),
+        symbols=[normalize_symbol(s) for s in body.symbols],
         forward_days=body.forward_days,
     )
     labels = await HistoricalLabelGenerator().generate(config)

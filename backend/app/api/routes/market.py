@@ -1,7 +1,7 @@
 from fastapi import APIRouter, HTTPException, Query
 
 from app.api.forecast import with_forecast
-from app.api.validation import normalize_symbol
+from app.api.validation import normalize_period, normalize_symbol
 from app.services import market as market_service
 
 router = APIRouter()
@@ -19,6 +19,7 @@ async def quote(symbol: str):
 @router.get("/ohlcv/{symbol}")
 async def ohlcv(symbol: str, period: str = Query("6mo")):
     symbol = normalize_symbol(symbol)
+    period = normalize_period(period)
     data = await market_service.fetch_ohlcv(symbol, period=period)
     if not data:
         raise HTTPException(404, f"No OHLCV for {symbol}")
