@@ -10,6 +10,7 @@ import yfinance as yf
 from app.analysis.options_expiry import pick_expiration
 from app.config import get_settings
 from app.providers.base import MarketDataProvider, OptionsProvider
+from app.providers.numeric import finite as _f, finite_int as _i
 from app.schemas.models import Candle, OptionContract, Quote
 from app.schemas.sourced import Sourced
 from app.utils.market_calendar import market_today
@@ -26,19 +27,22 @@ class YFinanceMarketProvider(MarketDataProvider):
         def _fetch() -> Quote | None:
             t = yf.Ticker(symbol)
             info = t.fast_info if hasattr(t, "fast_info") else {}
-            price = getattr(info, "last_price", None) or getattr(info, "lastPrice", None)
+            price = _f(getattr(info, "last_price", None) or getattr(info, "lastPrice", None))
             if price is None:
                 hist = t.history(period="5d")
-                if hist.empty:
+                closes = hist["Close"].dropna() if not hist.empty else hist
+                if closes.empty:
                     return None
-                price = float(hist["Close"].iloc[-1])
-            prev = getattr(info, "previous_close", None) or getattr(info, "previousClose", None)
+                price = _f(closes.iloc[-1])
+            if price is None:
+                return None
+            prev = _f(getattr(info, "previous_close", None) or getattr(info, "previousClose", None))
             change = None
             if prev:
-                change = (float(price) - float(prev)) / float(prev) * 100
+                change = (price - prev) / prev * 100
             return Quote(
                 symbol=symbol.upper(),
-                price=float(price),
+                price=price,
                 change_pct=change,
                 volume=float(getattr(info, "last_volume", 0) or 0) or None,
                 market_cap=float(getattr(info, "market_cap", 0) or 0) or None,
@@ -62,17 +66,24 @@ class YFinanceMarketProvider(MarketDataProvider):
             df = t.history(period=period, interval=interval, auto_adjust=adjusted)
             candles: list[Candle] = []
             for idx, row in df.iterrows():
+                # Yahoo emits a placeholder row for the session in progress whose
+                # OHLC is NaN until the bar closes. Keeping it would make the last
+                # candle — the one every indicator reads — undefined.
+                ohlc = [_f(row[field]) for field in ("Open", "High", "Low", "Close")]
+                if any(value is None for value in ohlc):
+                    continue
+                open_, high, low, close = ohlc
                 ts = idx.to_pydatetime()
                 if ts.tzinfo is None:
                     ts = ts.replace(tzinfo=UTC)
                 candles.append(
                     Candle(
                         timestamp=ts,
-                        open=float(row["Open"]),
-                        high=float(row["High"]),
-                        low=float(row["Low"]),
-                        close=float(row["Close"]),
-                        volume=float(row["Volume"]),
+                        open=open_,
+                        high=high,
+                        low=low,
+                        close=close,
+                        volume=_f(row["Volume"]) or 0.0,
                     )
                 )
             return candles
@@ -146,20 +157,3 @@ class YFinanceOptionsProvider(OptionsProvider):
             self.name,
             note="yfinance does not supply reliable greeks; use Alpaca or Black-Scholes fallback",
         )
-
-
-def _f(v) -> float | None:
-    try:
-        if v is None:
-            return None
-        x = float(v)
-        if x != x:  # NaN
-            return None
-        return x
-    except (TypeError, ValueError):
-        return None
-
-
-def _i(v) -> int | None:
-    f = _f(v)
-    return int(f) if f is not None else None
