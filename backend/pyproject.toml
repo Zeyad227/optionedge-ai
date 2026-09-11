@@ -6,7 +6,6 @@ build-backend = "hatchling.build"
 name = "optionedge-ai"
 version = "0.1.0"
 description = "Probabilistic options trading signal platform"
-readme = "../README.md"
 requires-python = ">=3.11"
 dependencies = [
   "fastapi>=0.115.0",
